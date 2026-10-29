@@ -1,0 +1,41 @@
+name: Daily Duty Reminder Notification
+
+on:
+  schedule:
+    # દરરોજ સવારે ૮:૩૦ વાગ્યે નોટિફિકેશન જશે
+    - cron: '30 2 * * *'
+  workflow_dispatch: # મેન્યુઅલી ટેસ્ટ કરવા માટે
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Duty Notification via OneSignal
+        run: |
+          DAY=$(date +%u) # 1=Mon, 2=Tue, ..., 7=Sun
+
+          case $DAY in
+            1) WATER="Aayush & Sexaa"; BALCONY="Vismay & Tonde" ;;
+            2) WATER="Dax & Chandu"; BALCONY="Aayush & Sexaa" ;;
+            3) WATER="Vismay & Tonde"; BALCONY="Prince & Hardik" ;;
+            4) WATER="Prince & Hardik"; BALCONY="Dax & Chandu" ;;
+            5) WATER="Aayush & Sexaa"; BALCONY="Vismay & Tonde" ;;
+            6) WATER="Dax & Chandu"; BALCONY="Aayush & Sexaa" ;;
+            7) WATER="Vismay & Tonde"; BALCONY="Prince & Hardik" ;;
+          esac
+
+          MESSAGE="🚰 પાણીનો જગ: $WATER | 🧹 બાલકની સફાઈ: $BALCONY"
+
+          curl --request POST \
+            --url https://onesignal.com/api/v1/notifications \
+            --header 'Authorization: Basic '${{ secrets.ONESIGNAL_REST_API_KEY }}'' \
+            --header 'accept: application/json' \
+            --header 'content-type: application/json' \
+            --data '
+            {
+              "app_id": "'${{ secrets.ONESIGNAL_APP_ID }}'",
+              "included_segments": ["Subscribed Users"],
+              "headings": {"en": "🔔 આજની ફ્લેટ ડ્યુટી રિમાઇન્ડર!"},
+              "contents": {"en": "'"$MESSAGE"'"}
+            }
+            '
